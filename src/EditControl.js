@@ -2,7 +2,7 @@ import { PropTypes } from 'prop-types';
 import Draw from 'leaflet-draw'; // eslint-disable-line
 import isEqual from 'lodash-es/isEqual';
 
-import { MapControl, withLeaflet } from 'react-leaflet';
+import { createControlComponent, useLeafletContext } from '@react-leaflet/core';
 import leaflet, { Map, Control } from 'leaflet';
 
 const eventHandlers = {
@@ -20,7 +20,7 @@ const eventHandlers = {
   onDeleteStop: 'draw:deletestop',
 };
 
-class EditControl extends MapControl {
+class EditControl extends createControlComponent {
   static propTypes = {
     ...Object.keys(eventHandlers).reduce((acc, val) => {
       acc[val] = PropTypes.func;
@@ -56,13 +56,17 @@ class EditControl extends MapControl {
     })
   };
 
+  this.state = {
+    leaflet: useLeafletContext()
+  };
+
   createLeafletElement(props) {
     return createDrawElement(props);
   }
 
   onDrawCreate = (e) => {
     const { onCreated } = this.props;
-    const { layerContainer } = this.props.leaflet;
+    const { layerContainer } = this.state.leaflet;
 
     layerContainer.addLayer(e.layer);
     onCreated && onCreated(e);
@@ -70,7 +74,7 @@ class EditControl extends MapControl {
 
   componentDidMount() {
     super.componentDidMount();
-    const { map } = this.props.leaflet;
+    const { map } = this.state.leaflet;
     const { onMounted } = this.props;
 
     for (const key in eventHandlers) {
@@ -90,7 +94,7 @@ class EditControl extends MapControl {
 
   componentWillUnmount() {
     super.componentWillUnmount();
-    const { map } = this.props.leaflet;
+    const { map } = this.state.leaflet;
 
     map.off(leaflet.Draw.Event.CREATED, this.onDrawCreate);
 
@@ -114,7 +118,7 @@ class EditControl extends MapControl {
       return false;
     }
 
-    const { map } = this.props.leaflet;
+    const { map } = this.state.leaflet;
 
     this.leafletElement.remove(map);
     this.leafletElement = createDrawElement(this.props);
@@ -129,7 +133,7 @@ class EditControl extends MapControl {
 }
 
 function createDrawElement(props) {
-  const { layerContainer } = props.leaflet;
+  const { layerContainer } = this.state.leaflet;
   const { draw, edit, position } = props;
   const options = {
     edit: {
@@ -149,4 +153,4 @@ function createDrawElement(props) {
   return new Control.Draw(options);
 }
 
-export default withLeaflet(EditControl);
+export default (EditControl);
